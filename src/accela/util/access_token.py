@@ -22,22 +22,25 @@ def get_access_token(
     environment: str,
     grant_type: str,
     scope: str,
-    id_provider: str,
+    id_provider: str | None = None,
 ) -> AccelaAccessToken:
     before_req_time = datetime.now(tz=timezone.utc)
+    data = {
+        "client_id": client_id,
+        "client_secret": client_secret,
+        "username": username,
+        "password": password,
+        "agency_name": agency_name,
+        "environment": environment,
+        "grant_type": grant_type,
+        "scope": scope,
+    }
+    if id_provider:
+        data["id_provider"] = id_provider
+
     r = requests.post(
         "https://apis.accela.com/oauth2/token",
-        data={
-            "client_id": client_id,
-            "client_secret": client_secret,
-            "username": username,
-            "password": password,
-            "agency_name": agency_name,
-            "environment": environment,
-            "grant_type": grant_type,
-            "scope": scope,
-            "id_provider": id_provider,
-        },
+        data=data,
     )
     r.raise_for_status()
 
