@@ -3,6 +3,7 @@ from datetime import date, datetime
 from typing import Any, Dict, List, Optional, Union
 
 from .base import BaseResource, ListResponse, ResourceModel
+import json
 
 
 @dataclass
@@ -323,7 +324,13 @@ class Records(BaseResource):
 
         return self._list_resource(url, Record, params)
 
-    def retrieve(self, record_id: str) -> Record:
+    def retrieve(
+        self,
+        record_id: str,
+        expand: Optional[List[str]] = None,
+        fields: Optional[List[str]] = None,
+        expand_custom_forms: Optional[str] = None,
+    ) -> Record:
         """
         Retrieve a specific record by ID.
 
@@ -333,6 +340,128 @@ class Records(BaseResource):
         Returns:
             Record object
         """
-        url = f"{self.client.BASE_URL}/records/{record_id}"
-        result = self._get(url)
+        url = f"{self.client.BASE_URL}/records"
+        params: Dict[str, Any] = {"customId": record_id}
+
+        if expand:
+            params["expand"] = ",".join(expand)
+        if fields:
+            params["fields"] = ",".join(fields)
+        if expand_custom_forms:
+            params["expandCustomForms"] = expand_custom_forms
+
+        result = self._get(url, params=params)
         return Record.from_json(result["result"][0], self.client)
+
+    def search(
+        self,
+        search_query: Dict[str, Any],
+        limit: int = 100,
+        offset: int = 0,
+        expand: Optional[List[str]] = None,
+        fields: Optional[List[str]] = None,
+        expand_custom_forms: Optional[str] = None,
+    ) -> ListResponse[Record]:
+        """
+        Search for records matching the specified criteria.
+        https://developer.accela.com/docs/api_reference/api-search.html#operation/v4.post.search.records
+
+        Args:
+            search_query: A dictionary representing the search query.
+            limit: The maximum number of records to return.
+            offset: The starting offset for pagination.
+            expand: The sub-resources to expand in the response -  "addresses" "parcels" "professionals" "contacts" "owners" "customForms" "customTables"
+            fields: The API allow consumer to specify return field with resource. The values are case-sensitive fields name of JSON object and be split by comma..
+            expand_custom_forms:
+
+        Returns:
+            A ListResponse object containing the search results.
+        """
+        url = f"{self.client.BASE_URL}/search/records"
+        params: Dict[str, Any] = {"limit": limit, "offset": offset}
+        if fields:
+            params["fields"] = ",".join(fields)
+        if expand:
+            params["expand"] = ",".join(expand)
+        if expand_custom_forms:
+            params[" expandCustomForms "] = "addresses"
+
+        result = self._post(url, data=search_query, params=params)
+
+        items = [
+            Record.from_json(item, self.client) for item in result["result"]
+        ]
+        
+        page_info = result.get("page", {})
+        total = page_info.get("total", len(items))
+        has_more = page_info.get("hasmore", False)
+        
+        # If hasmore is not provided, fallback to standard logic
+        if "hasmore" not in page_info:
+            has_more = len(items) == limit and offset + limit < total
+
+        return ListResponse(
+            data=items,
+            has_more=has_more,
+            offset=offset,
+            limit=limit,
+            total=total,
+            _client=self.client,
+            _params=params,
+            _url=url,
+            _model_class=Record,
+        )
+
+    def g_search(
+        self,
+        query: Dict[str, Any],
+        limit: int = 100,
+        offset: int = 0,
+    ) -> ListResponse[Record]:
+        """
+        Search for records matching the specified criteria.
+        https://developer.accela.com/docs/api_reference/api-search.html#operation/v4.post.search.records
+
+        Args:
+            query: A dictionary representing the search query.
+            limit: The maximum number of records to return.
+            offset: The starting offset for pagination.
+
+        Returns:
+            A ListResponse object containing the search results.
+        """
+        url = f"{self.client.BASE_URL}/search/global"
+        params: Dict[str, Any] = {
+            "limit": limit,
+            "offset": offset,
+            "query": query,
+            "type": "RECORD",
+            # "type": "RECORD,ADDRESS,LICENSEPROFESSIONAL,ASSET,CONTACT,PARCEL,DOCUMENT",
+        }
+        # params = {}
+
+        result = self._get(url, params=params)
+
+        items = [
+            Record.from_json(item, self.client) for item in result["result"]
+        ]
+        
+        page_info = result.get("page", {})
+        total = page_info.get("total", len(items))
+        has_more = page_info.get("hasmore", False)
+        
+        # If hasmore is not provided, fallback to standard logic
+        if "hasmore" not in page_info:
+            has_more = len(items) == limit and offset + limit < total
+
+        return ListResponse(
+            data=items,
+            has_more=has_more,
+            offset=offset,
+            limit=limit,
+            total=total,
+            _client=self.client,
+            _params=params,
+            _url=url,
+            _model_class=Record,
+        )

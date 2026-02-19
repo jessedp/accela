@@ -7,9 +7,13 @@ from .resources.base import BaseResource
 from .resources.documents import Documents
 from .resources.modules import Modules
 from .resources.record_addresses import RecordAddresses
+from .resources.record_activities import RecordActivities
 from .resources.record_documents import RecordDocuments
+from .resources.record_mine import MyRecords
 from .resources.record_parcels import RecordParcels
 from .resources.record_types import RecordTypes
+from .resources.record_workflows import RecordWorkflowTasks
+from .resources.record_workflow_task_histories import RecordWorkflowTaskHistories
 from .resources.records import Records
 
 
@@ -24,11 +28,15 @@ class AccelaClient:
         "agency_environments": AgencyEnvironments,
         "records": Records,
         "record_addresses": RecordAddresses,
+        "record_activities": RecordActivities,
         "record_documents": RecordDocuments,
+        "my_records": MyRecords,
         "record_parcels": RecordParcels,
         "documents": Documents,
         "modules": Modules,
         "record_types": RecordTypes,
+        "record_workflow_tasks": RecordWorkflowTasks,
+        "record_workflow_task_histories": RecordWorkflowTaskHistories,
     }
 
     # Hinting
@@ -36,11 +44,15 @@ class AccelaClient:
     agency_environments: AgencyEnvironments
     records: Records
     record_addresses: RecordAddresses
+    record_activities: RecordActivities
     record_documents: RecordDocuments
+    my_records: MyRecords
     record_parcels: RecordParcels
     documents: Documents
     modules: Modules
     record_types: RecordTypes
+    record_workflow_tasks: RecordWorkflowTasks
+    record_workflow_task_histories: RecordWorkflowTaskHistories
 
     def __init__(
             self,
