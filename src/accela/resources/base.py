@@ -276,11 +276,18 @@ class BaseResource:
             items = []
         else:
             items = [model_class.from_json(item, self.client) for item in result[result_key]]
-        total = result.get("total", len(items))
+        
+        page_info = result.get("page", {})
+        total = result.get("total", page_info.get("total", len(items)))
+        has_more = page_info.get("hasmore", False)
+        
+        # If hasmore is not provided, fallback to standard logic
+        if "hasmore" not in page_info:
+            has_more = len(items) == limit and offset + limit < total
 
         return ListResponse(
             data=items,
-            has_more=len(items) == limit and offset + limit < total,
+            has_more=has_more,
             offset=offset,
             limit=limit,
             total=total,
@@ -290,15 +297,72 @@ class BaseResource:
             _model_class=model_class,
         )  # Type will be inferred as ListResponse[model_class]
 
-    def _make_request(self, method: str, url: str, params: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    def _post(
+        self,
+        url: str,
+        data: Optional[Dict[str, Any]] = None,
+        params: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
+        """Make a POST request to the Accela API.
+        Args:
+            url: The API endpoint URL
+            data: The JSON request body
+            params: Optional query parameters
+        Returns:
+            The JSON response from the API
+        Raises:
+            requests.HTTPError: If the request fails
+        """
+        response = requests.post(
+            url, headers=self.client.headers, json=data, params=params
+        )
+        try:
+            response.raise_for_status()
+        except requests.HTTPError as e:
+            print("--- Accela API POST Request Failed ---")
+            print(f"URL: {url}")
+            print(f"Status Code: {response.status_code}")
+            try:
+                print(f"Response Body: {response.json()}")
+            except json.JSONDecodeError:
+                print(f"Response Body: {response.text}")
+            print("--- Response Headers ---")
+            print(
+                f"x-accela-traceId: {response.headers.get('x-accela-traceId')}"
+            )
+            print(
+                f"x-accela-resp-message: {response.headers.get('x-accela-resp-message')}"
+            )
+            print(
+                f"x-ratelimit-limit: {response.headers.get('x-ratelimit-limit')}"
+            )
+            print(
+                f"x-ratelimit-remaining: {response.headers.get('x-ratelimit-remaining')}"
+            )
+            print(
+                f"x-ratelimit-reset: {response.headers.get('x-ratelimit-reset')}"
+            )
+            print("------------------------")
+            print("------------------------------------")
+            raise e
+        return response.json()
+
+    def _make_request(
+        self,
+        method: str,
+        url: str,
+        params: Optional[Dict[str, Any]] = None,
+        data: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
         """Make a request to the Accela API.
 
-        Note: Currently only GET requests are fully supported and tested.
+        Note: Currently only GET and POST requests are fully supported and tested.
 
         Args:
             method: HTTP method (GET, POST, etc.)
             url: The API endpoint URL
             params: Optional query parameters
+            data: Optional request body for POST requests
 
         Returns:
             The JSON response from the API
@@ -307,8 +371,9 @@ class BaseResource:
             ValueError: If an unsupported HTTP method is specified
             requests.HTTPError: If the request fails
         """
-        # For now, we're only supporting GET requests
         if method.upper() == "GET":
             return self._get(url, params)
+        elif method.upper() == "POST":
+            return self._post(url, data=data, params=params)
         else:
             raise ValueError(f"Method {method} is not currently supported")
