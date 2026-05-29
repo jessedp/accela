@@ -8,6 +8,7 @@ from .record_workflow_task_histories import (
     RecordWorkflowTaskHistory,
     RecordWorkflowTaskHistories,
 )
+from .record_inspections import RecordInspection, RecordInspections
 
 __all__ = [
     "ListResponse",
@@ -23,4 +24,6 @@ __all__ = [
     "RecordWorkflowTasks",
     "RecordWorkflowTaskHistory",
     "RecordWorkflowTaskHistories",
+    "RecordInspection",
+    "RecordInspections",
 ]
