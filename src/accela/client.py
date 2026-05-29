@@ -15,6 +15,7 @@ from .resources.record_types import RecordTypes
 from .resources.record_workflows import RecordWorkflowTasks
 from .resources.record_workflow_task_histories import RecordWorkflowTaskHistories
 from .resources.record_inspections import RecordInspections
+from .resources.record_conditions import RecordConditions
 from .resources.records import Records
 
 
@@ -39,6 +40,7 @@ class AccelaClient:
         "record_workflow_tasks": RecordWorkflowTasks,
         "record_workflow_task_histories": RecordWorkflowTaskHistories,
         "record_inspections": RecordInspections,
+        "record_conditions": RecordConditions,
     }
 
     # Hinting
@@ -56,6 +58,7 @@ class AccelaClient:
     record_workflow_tasks: RecordWorkflowTasks
     record_workflow_task_histories: RecordWorkflowTaskHistories
     record_inspections: RecordInspections
+    record_conditions: RecordConditions
 
     def __init__(
             self,
